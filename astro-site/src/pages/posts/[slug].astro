@@ -1,0 +1,73 @@
+---
+// 記事詳細ページ src/pages/posts/[slug].astro
+import "../../styles/global.css";
+import { getCollection } from "astro:content";
+
+const { slug } = Astro.params;
+
+export async function getStaticPaths() {
+  const posts = await getCollection("posts");
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+  }));
+}
+
+const posts = await getCollection("posts");
+const post = posts.find((p) => p.slug === slug);
+if (!post) throw new Error("Not found");
+---
+
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{post.data.title}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+  <body class="bg-gray-100 text-gray-800 font-sans px-4 py-6">
+    <div class="max-w-3xl mx-auto">
+
+      <!-- ✅ タイトル -->
+      <header class="mb-6">
+        <h1 class="text-3xl font-extrabold text-sky-500 mb-2">📰 {post.data.title}</h1>
+        <p class="text-sm text-gray-500">
+          {post.data.pubDate.toLocaleDateString('ja-JP')} – {post.data.source}
+          {post.data.url && (
+            <>
+              {' '}
+              <a href={post.data.url} target="_blank" rel="noopener noreferrer"
+                class="text-sky-500 hover:text-gray-500 no-underline border-b border-transparent hover:border-gray-300 transition">
+                元記事
+              </a>
+            </>
+          )}
+        </p>
+      </header>
+
+      <!-- ✅ Markdown本文 -->
+      <article class="prose prose-sm sm:prose lg:prose-lg max-w-none bg-white rounded-lg shadow p-6">
+        {post.body}
+      </article>
+
+      <!-- ✅ 戻るボタン -->
+      <div class="mt-10 text-center">
+        <a id="backLink"
+          href="#"
+          class="inline-block px-4 py-2 border border-sky-600 text-sky-600 rounded hover:bg-gray-100 transition">
+          ← 一覧へ戻る
+        </a>
+      </div>
+
+    </div>
+
+    <!-- ✅ URLクエリから fromPage と fromSort を取得し戻る先を動的構築 -->
+    <script is:inline>
+      const params = new URL(window.location.href).searchParams;
+      const fromPage = params.get("fromPage") || "1";
+      const fromSort = params.get("fromSort") || "date";
+      const backLink = document.getElementById("backLink");
+      if (backLink) {
+        backLink.href = `/page/${fromSort}/${fromPage}`;
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,48 @@
+name: Deploy Astro AI News
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'  # 10分ごとに実行（UTC）
+  workflow_dispatch:        # 手動トリガーも許可
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repo
+        uses: actions/checkout@v3
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install Python packages
+        run: pip install feedparser requests trafilatura pyyaml
+
+      - name: 📰 Run feed_fetcher.py
+        run: python feed_fetcher.py
+
+      - name: 🧱 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: 📦 Install Node packages
+        run: |
+          cd astro-site
+          npm ci
+
+      - name: 🏗 Build Astro site
+        run: |
+          cd astro-site
+          npm run build
+
+      - name: 🚀 Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: astro-site/dist
